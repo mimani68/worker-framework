@@ -1,4 +1,4 @@
-let { sendFunctionToWorker, listenToParent, callParent } = require("./worker.controller")
+let { sendFunctionToWorker, listenToParent, callParent } = require("./libs/worker")
 
 function App() {
     let action = (message) => {

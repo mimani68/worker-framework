@@ -1,5 +1,5 @@
 const { Worker, parentPort } = require('worker_threads');
-const { isEmpty } = require('./libs/is_empty');
+const { isEmpty } = require('../string/is_empty');
 
 let workerPool = new Map()
 
@@ -15,9 +15,10 @@ function fileWorkerFactory (fileName, channelAlias) {
     })
 }
 
-function simpleWorkerFactory (codeSnippet, channelAlias) {
+function codeWorkerFactory (functionString, channelAlias) {
     return new Promise((resolve, reject) => {
-        let worker = new Worker(`${ codeSnippet }`, {
+        let file = 'let handle = ' + functionString + '; handle()'
+        let worker = new Worker(file, {
             eval: true
         })
         workerPool.set(channelAlias, worker)
@@ -29,7 +30,7 @@ function simpleWorkerFactory (codeSnippet, channelAlias) {
     })
 }
 
-function getChannel(channelAlias) {
+function getWorker(channelAlias) {
     let worker = workerPool.get(channelAlias);
     return {
         callWorker: callWorker.bind({ worker }),
@@ -63,4 +64,4 @@ function listenToWorker(cb) {
     });
 }
 
-module.exports = { fileWorkerFactory, simpleWorkerFactory, getChannel, sendFunctionToWorker, listenToParent, listenToWorker, callParent, callWorker }
+module.exports = { fileWorkerFactory, codeWorkerFactory, getWorker, sendFunctionToWorker, listenToParent, listenToWorker, callParent, callWorker }
