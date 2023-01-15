@@ -3,26 +3,37 @@ const { isEmpty } = require('./libs/is_empty');
 
 let workerPool = new Map()
 
-function workerHandlerFactory (fileName, channelAlias) {
+function fileWorkerFactory (fileName, channelAlias) {
     return new Promise((resolve, reject) => {
-        workerPool.set(channelAlias, new Worker(fileName))
-        let worker = workerPool.get(channelAlias);
-        // worker.on('message', resolve);
-        resolve({ workerName: fileName })
+        let worker = new Worker(fileName);
+        workerPool.set(channelAlias, worker)
         worker.on('error', reject);
         worker.on('exit', (code) => {
             if (code !== 0)
                 reject(new Error(`stopped with  ${code} exit code`));
         })
     })
+}
 
+function simpleWorkerFactory (codeSnippet, channelAlias) {
+    return new Promise((resolve, reject) => {
+        let worker = new Worker(`${ codeSnippet }`, {
+            eval: true
+        })
+        workerPool.set(channelAlias, worker)
+        worker.on('error', reject);
+        worker.on('exit', (code) => {
+            if (code !== 0)
+                reject(new Error(`stopped with  ${code} exit code`));
+        })
+    })
 }
 
 function getChannel(channelAlias) {
     let worker = workerPool.get(channelAlias);
     return {
-        callWorker: Object.bind(this, { worker} ),
-        listenToWorker: Object.bind(this, { worker} )
+        callWorker: callWorker.bind({ worker }),
+        listenToWorker: listenToWorker.bind({ worker })
     }
 }
 
@@ -52,4 +63,4 @@ function listenToWorker(cb) {
     });
 }
 
-module.exports = { workerHandlerFactory, getChannel, sendFunctionToWorker, listenToParent, listenToWorker, callParent, callWorker }
+module.exports = { fileWorkerFactory, simpleWorkerFactory, getChannel, sendFunctionToWorker, listenToParent, listenToWorker, callParent, callWorker }
